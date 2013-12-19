@@ -1,0 +1,3 @@
+[submodule "pyFirmata"]
+	path = pyFirmata
+	url = https://github.com/tino/pyFirmata
