@@ -62,7 +62,6 @@ class Rodi(Plugin):
         self._rodis = []
         self._rodis_it = []
         self._rodis_pines = []
-
         self.actualSpeed = [50, 50]
 
     def setup(self):
@@ -146,17 +145,10 @@ class Rodi(Plugin):
     ############################### Turtle signals ############################
 
     def stop(self):
-        if len(self._rodis) > 0:
-            self.set_vels(0, 0)
-        else:
-            pass
+        self.stopRodis()
 
     def quit(self):
-        for dev in self._rodis:
-            try:
-                dev.exit()
-            except:
-                pass
+        self.closeRodis()
 
     ################################ Refresh process ################################
 
@@ -183,16 +175,11 @@ class Rodi(Plugin):
                         else:
                             special_block_colors[block.name] = COLOR_NOTPRESENT[:]
                         block.refresh()
-
             self.tw.regenerate_palette(index)
 
     def refresh_Rodi(self):
         #Close actual Rodis
-        for dev in self._rodis:
-            try:
-                dev.exit()
-            except:
-                pass
+        self.closeRodis()
         self._rodis = []
         self._rodis_it = []
 
@@ -215,9 +202,10 @@ class Rodi(Plugin):
                 n = '/dev/%s' % dev
                 try:
                     r = pyfirmata.Arduino(n, baudrate=self._baud)
+                    it = pyfirmata.util.Iterator(r)
+                    it.start()
                     self._rodis.append(r)
-                    self._rodis_it.append( pyfirmata.util.Iterator(r))
-                    self._rodis_it[len(self._rodis)-1].start()
+                    self._rodis_it.append(it)
                 except:
                     raise logoerror(_('Error loading %s board') % n)
 
@@ -226,12 +214,10 @@ class Rodi(Plugin):
     ################################ Movement calls ################################
 
     def set_vels(self, left, right):
-        #debug_output('left=%d\tright=%d' %(left,right))
         try:
             r = self._rodis[self.active_rodi]
             lMode = r.digital[LEFT_SERVO]._get_mode()
             rMode = r.digital[RIGHT_SERVO]._get_mode()
-            #debug_output('lMode=%d\trMode=%d' %(lMode,rMode))
             if left == 0:
                 r.digital[LEFT_SERVO]._set_mode(MODE['OUTPUT'])
             else:
@@ -289,3 +275,19 @@ class Rodi(Plugin):
         except:
             pass
         return res
+
+    def closeRodis(self):
+        for dev in self._rodis:
+            try:
+                dev.exit()
+            except:
+                pass
+
+    def stopRodis(self):
+        for dev in self._rodis:
+            try:
+                dev.digital[LEFT_SERVO]._set_mode(MODE['OUTPUT'])
+                dev.digital[RIGHT_SERVO]._set_mode(MODE['OUTPUT'])
+            except:
+                pass
+
