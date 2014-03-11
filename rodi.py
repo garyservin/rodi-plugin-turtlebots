@@ -46,7 +46,7 @@ LEFT_SERVO = 10
 RIGHT_SERVO = 11
 
 COLOR_NOTPRESENT = ["#A0A0A0","#808080"]
-COLOR_PRESENT = ["#000000","#00A0A0"]
+COLOR_PRESENT = ["#6A8DF6","#5A7DE6"]
 
 ERROR = _('ERROR: Check the connection with the robot.')
 ERROR_SPEED = _('ERROR: The speed must be a value between 0 and %d' %(MAX_SPEED))
