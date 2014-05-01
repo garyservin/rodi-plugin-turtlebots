@@ -222,13 +222,13 @@ class Rodi(Plugin):
                 r.digital[LEFT_SERVO]._set_mode(MODE['OUTPUT'])
             else:
                 r.digital[LEFT_SERVO]._set_mode(MODE['SERVO'])
-                r.digital[LEFT_SERVO].write(MAX_SPEED - left)
+                r.digital[LEFT_SERVO].write(MAX_SPEED + left)
 
             if right == 0:
                 r.digital[RIGHT_SERVO]._set_mode(MODE['OUTPUT'])
             else:
                 r.digital[RIGHT_SERVO]._set_mode(MODE['SERVO'])
-                r.digital[RIGHT_SERVO].write(MAX_SPEED + right)
+                r.digital[RIGHT_SERVO].write(MAX_SPEED - right)
         except:
             raise logoerror(ERROR)
 
