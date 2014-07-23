@@ -27,9 +27,7 @@ from TurtleArt.tapalette import palette_name_to_index
 from TurtleArt.tapalette import palette_blocks
 from TurtleArt.tapalette import special_block_colors
 from TurtleArt.talogo import logoerror
-from TurtleArt.tautils import debug_output
-from TurtleArt.taconstants import CONSTANTS
-from TurtleArt.taprimitive import Primitive, ArgSlot, ConstantArg
+from TurtleArt.taprimitive import Primitive, ArgSlot
 from TurtleArt.tatype import TYPE_INT, TYPE_FLOAT, TYPE_STRING, TYPE_NUMBER
 
 sys.path.insert(0, os.path.abspath('./plugins/rodi'))
@@ -77,6 +75,32 @@ class Rodi(Plugin):
         self.tw.lc.def_prim('refresh_Rodi', 0,
             Primitive(self.refresh_Rodi))
         special_block_colors['refresh_Rodi'] = COLOR_PRESENT[:]
+
+        palette.add_block('select_Rodi',
+                          style='basic-style-1arg',
+                          default = 1,
+                          label=_('Rodi'),
+                          help_string=_('set current Rodi robot'),
+                          prim_name = 'select_Rodi')
+        self.tw.lc.def_prim('select_Rodi', 1,
+            Primitive(self.select_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER)]))
+
+        palette.add_block('count_Rodi',
+                          style='box-style',
+                          label=_('number of Rodis'),
+                          help_string=_('number of Rodi robots'),
+                          prim_name = 'count_Rodi')
+        self.tw.lc.def_prim('count_Rodi', 0,
+            Primitive(self.count_Rodi, TYPE_INT))
+
+        palette.add_block('name_Rodi',
+                  style='number-style-1arg',
+                  label=_('Rodi name'),
+                  default=[1],
+                  help_string=_('Get the name of a Rodi robot'),
+                  prim_name='name_Rodi')
+        self.tw.lc.def_prim('name_Rodi', 1,
+            Primitive(self.name_Rodi, TYPE_STRING, [ArgSlot(TYPE_NUMBER)]))
 
         palette.add_block('move_Rodi',
                      style='basic-style-2arg',
@@ -142,7 +166,7 @@ class Rodi(Plugin):
             Primitive(self.distance_Rodi, TYPE_FLOAT))
         special_block_colors['distance_Rodi'] = COLOR_NOTPRESENT[:]
 
-    ############################### Turtle signals ############################
+    ############################## Turtle signals ##############################
 
     def stop(self):
         self.stopRodis()
@@ -150,13 +174,41 @@ class Rodi(Plugin):
     def quit(self):
         self.closeRodis()
 
-    ################################ Refresh process ################################
+    ############################ Select functions ##############################
+
+    def select_Rodi(self, i):
+        n = len(self._rodis)
+        try:
+            i = int(i)
+        except:
+            raise logoerror(_('The device must be an integer'))
+        i = i - 1
+        if (i < n) and (i >= 0):
+            self.active_arduino = i
+        else:
+            raise logoerror(_('Not found Rodi %s') % (i + 1))
+
+    def count_Rodi(self):
+        return len(self._rodis)
+
+    def name_Rodi(self, i):
+        n = len(self._rodis)
+        try:
+            i = int(i)
+        except:
+            raise logoerror(_('The device must be an integer'))
+        i = i - 1
+        if (i < n) and (i >= 0):
+            a = self._arduinos[i]
+            return a.name
+        else:
+            raise logoerror(_('Not found Rodi %s') % (i + 1))
+
+    ############################## Refresh process #############################
 
     def _check_init(self):
         n = len(self._rodis)
-        if (self.active_rodi > n) and (self.active_rodi < 0):
-            r = self._rodis[sef.active_rodi]
-        else:
+        if (self.active_rodi > n) or (self.active_rodi < 0):
             raise logoerror(_('Not found Rodi %s') % (self.active_rodi + 1))
 
     def change_color_blocks(self):
@@ -180,8 +232,6 @@ class Rodi(Plugin):
     def refresh_Rodi(self):
         #Close actual Rodis
         self.closeRodis()
-        self._rodis = []
-        self._rodis_it = []
 
         #Search for new Rodis
         #status,output_usb = commands.getstatusoutput("ls /dev/ | grep ttyUSB")
@@ -211,13 +261,13 @@ class Rodi(Plugin):
 
         self.change_color_blocks()
 
-    ################################ Movement calls ################################
+    ############################ Movement calls ################################
 
     def set_vels(self, left, right):
         try:
             r = self._rodis[self.active_rodi]
-            lMode = r.digital[LEFT_SERVO]._get_mode()
-            rMode = r.digital[RIGHT_SERVO]._get_mode()
+            #lMode = r.digital[LEFT_SERVO]._get_mode()
+            #rMode = r.digital[RIGHT_SERVO]._get_mode()
             if left == 0:
                 r.digital[LEFT_SERVO]._set_mode(MODE['OUTPUT'])
             else:
@@ -282,6 +332,8 @@ class Rodi(Plugin):
                 dev.exit()
             except:
                 pass
+        self._rodis = []
+        self._rodis_it = []
 
     def stopRodis(self):
         for dev in self._rodis:
