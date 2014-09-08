@@ -39,9 +39,13 @@ MODE = {_('INPUT'): pyfirmata.INPUT, _('OUTPUT'): pyfirmata.OUTPUT,
         _('PWM'): pyfirmata.PWM, _('SERVO'): pyfirmata.SERVO}
 
 MAX_SPEED = 90
-DISTANCE_SENSOR = 0
+LEFT_SENSOR = 0
+RIGHT_SENSOR = 3
+BATTERY_MON = 1
+DISTANCE_SENSOR = 2
 LEFT_SERVO = 5
 RIGHT_SERVO = 6
+BUZZER = 9
 
 COLOR_NOTPRESENT = ["#A0A0A0","#808080"]
 COLOR_PRESENT = ["#6A8DF6","#5A7DE6"]
@@ -165,6 +169,24 @@ class Rodi(Plugin):
         self.tw.lc.def_prim('distance_Rodi', 0,
             Primitive(self.distance_Rodi, TYPE_FLOAT))
         special_block_colors['distance_Rodi'] = COLOR_NOTPRESENT[:]
+
+        palette.add_block('left_sensor_Rodi',
+                     style='box-style',
+                     label=_('left sensor Rodi'),
+                     prim_name='left_sensor_Rodi',
+                     help_string=_('returns the left line sensor as a value between 0 and 1'))
+        self.tw.lc.def_prim('left_sensor_Rodi', 0,
+            Primitive(self.left_sensor_Rodi, TYPE_FLOAT))
+        special_block_colors['left_sensor_Rodi'] = COLOR_NOTPRESENT[:]
+
+        palette.add_block('right_sensor_Rodi',
+                     style='box-style',
+                     label=_('right sensor Rodi'),
+                     prim_name='right_sensor_Rodi',
+                     help_string=_('returns the right line sensor as a value between 0 and 1'))
+        self.tw.lc.def_prim('right_sensor_Rodi', 0,
+            Primitive(self.right_sensor_Rodi, TYPE_FLOAT))
+        special_block_colors['right_sensor_Rodi'] = COLOR_NOTPRESENT[:]
 
     ############################## Turtle signals ##############################
 
@@ -322,6 +344,30 @@ class Rodi(Plugin):
             r.pass_time(0.05)
             res = r.analog[DISTANCE_SENSOR].read()
             r.analog[DISTANCE_SENSOR].disable_reporting()
+        except:
+            pass
+        return res
+
+    def left_sensor_Rodi(self):
+        res = -1
+        try:
+            r = self._rodis[self.active_rodi]
+            r.analog[LEFT_SENSOR].enable_reporting()
+            r.pass_time(0.05)
+            res = r.analog[LEFT_SENSOR].read()
+            r.analog[LEFT_SENSOR].disable_reporting()
+        except:
+            pass
+        return res
+
+    def right_sensor_Rodi(self):
+        res = -1
+        try:
+            r = self._rodis[self.active_rodi]
+            r.analog[RIGHT_SENSOR].enable_reporting()
+            r.pass_time(0.05)
+            res = r.analog[RIGHT_SENSOR].read()
+            r.analog[RIGHT_SENSOR].disable_reporting()
         except:
             pass
         return res
