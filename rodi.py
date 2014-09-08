@@ -39,8 +39,8 @@ MODE = {_('INPUT'): pyfirmata.INPUT, _('OUTPUT'): pyfirmata.OUTPUT,
         _('PWM'): pyfirmata.PWM, _('SERVO'): pyfirmata.SERVO}
 
 MAX_SPEED = 90
-LEFT_SENSOR = 0
-RIGHT_SENSOR = 3
+LEFT_SENSOR = 3
+RIGHT_SENSOR = 0
 BATTERY_MON = 1
 DISTANCE_SENSOR = 2
 LEFT_SERVO = 5
