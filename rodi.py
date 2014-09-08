@@ -319,7 +319,7 @@ class Rodi(Plugin):
         try:
             r = self._rodis[self.active_rodi]
             r.analog[DISTANCE_SENSOR].enable_reporting()
-            r.time_pass(0.05)
+            r.pass_time(0.05)
             res = r.analog[DISTANCE_SENSOR].read()
             r.analog[DISTANCE_SENSOR].disable_reporting()
         except:
