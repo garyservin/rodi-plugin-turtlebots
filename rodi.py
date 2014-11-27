@@ -45,7 +45,8 @@ BATTERY_MON = 1
 DISTANCE_SENSOR = 2
 LEFT_SERVO = 5
 RIGHT_SERVO = 6
-BUZZER = 9
+BUZZER = 3
+LED = 13
 
 COLOR_NOTPRESENT = ["#A0A0A0","#808080"]
 COLOR_PRESENT = ["#6A8DF6","#5A7DE6"]
@@ -188,6 +189,26 @@ class Rodi(Plugin):
             Primitive(self.right_sensor_Rodi, TYPE_FLOAT))
         special_block_colors['right_sensor_Rodi'] = COLOR_NOTPRESENT[:]
 
+        palette.add_block('led_Rodi',
+                          style='basic-style-1arg',
+                          default = 1,
+                          label=_('LED'),
+                          help_string=_("turns LED on and off: 1 means on, 0 means off"),
+                          prim_name = 'led_Rodi')
+        self.tw.lc.def_prim('led_Rodi', 1,
+            Primitive(self.setLed_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER)]))
+        special_block_colors['led_Rodi'] = COLOR_NOTPRESENT[:]
+
+        palette.add_block('buzzer_Rodi',
+                          style='basic-style-1arg',
+                          default = 1,
+                          label=_('buzzer'),
+                          help_string=_("turns buzeer on and off: 1 means on, 0 means off"),
+                          prim_name = 'buzzer_Rodi')
+        self.tw.lc.def_prim('buzzer_Rodi', 1,
+            Primitive(self.setBuzzer_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER)]))
+        special_block_colors['buzzer_Rodi'] = COLOR_NOTPRESENT[:]
+
     ############################## Turtle signals ##############################
 
     def stop(self):
@@ -256,18 +277,18 @@ class Rodi(Plugin):
         self.closeRodis()
 
         #Search for new Rodis
-        #status,output_usb = commands.getstatusoutput("ls /dev/ | grep ttyUSB")
-        #output_usb_parsed = output_usb.split('\n')
-        #status,output_acm = commands.getstatusoutput("ls /dev/ | grep ttyACM")
-        #output_acm_parsed = output_acm.split('\n')
-
         # add rfcomm to the list of rodis
         status,output_rfc = commands.getstatusoutput("ls /dev/ | grep rfcomm")
         output_rfc_parsed = output_rfc.split('\n')
-
-        #output = output_usb_parsed
-        #output.extend(output_acm_parsed)
         output = output_rfc_parsed
+
+        status,output_usb = commands.getstatusoutput("ls /dev/ | grep ttyUSB")
+        output_usb_parsed = output_usb.split('\n')
+        output.extend(output_usb_parsed)
+
+        status,output_acm = commands.getstatusoutput("ls /dev/ | grep ttyACM")
+        output_acm_parsed = output_acm.split('\n')
+        output.extend(output_acm_parsed)
 
         for dev in output:
             if not(dev == ''):
@@ -288,8 +309,6 @@ class Rodi(Plugin):
     def set_vels(self, left, right):
         try:
             r = self._rodis[self.active_rodi]
-            #lMode = r.digital[LEFT_SERVO]._get_mode()
-            #rMode = r.digital[RIGHT_SERVO]._get_mode()
             if left == 0:
                 r.digital[LEFT_SERVO]._set_mode(MODE['OUTPUT'])
             else:
@@ -388,4 +407,22 @@ class Rodi(Plugin):
                 dev.digital[RIGHT_SERVO]._set_mode(MODE['OUTPUT'])
             except:
                 pass
+
+    def setLed_Rodi(self, value):
+        try:
+            value = int(value)
+            r = self._rodis[self.active_rodi]
+            r.digital[LED].write(value)
+
+        except:
+            raise logoerror(ERROR)
+
+    def setBuzzer_Rodi(self, value):
+        try:
+            value = int(value)
+            r = self._rodis[self.active_rodi]
+            r.digital[BUZZER].write(value)
+
+        except:
+            raise logoerror(ERROR)
 
