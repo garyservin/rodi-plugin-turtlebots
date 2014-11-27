@@ -59,6 +59,26 @@ class InvalidPinDefError(Exception):
 class NoInputWarning(RuntimeWarning):
     pass
 
+import socket
+import array
+
+class WifiSerial(object):
+    def __init__(self, address=None, port=None):
+        self.sock = socket.socket()
+        self.sock.connect((address, int(port)))
+        self.sock.settimeout(1)
+        self.port = address + ":" + port
+
+    def read(self):
+        return self.sock.recv(1)
+
+    def write(self, data):
+        self.sock.send(data)
+
+    def close(self):
+        self.sock.close()
+
+
 class Board(object):
     """The Base class for any board."""
     firmata_version = None
@@ -69,8 +89,11 @@ class Board(object):
     _stored_data = []
     _parsing_sysex = False
 
-    def __init__(self, port, layout, baudrate=57600, name=None):
-        self.sp = serial.Serial(port, baudrate)
+    def __init__(self, port, layout, baudrate=57600, name=None, address=None):
+        if address is None:
+            self.sp = serial.Serial(port, baudrate)
+        else:
+            self.sp = WifiSerial(address, port)
         # Allow 5 secs for Arduino's auto-reset to happen
         # Alas, Firmata blinks its version before printing it to serial
         # For 2.3, even 5 seconds might not be enough.
@@ -80,9 +103,10 @@ class Board(object):
         if not self.name:
             self.name = port
         self.setup_layout(layout)
-        # Iterate over the first messages to get firmware data
-        while self.bytes_available():
-            self.iterate()
+        if address is None:
+            # Iterate over the first messages to get firmware data
+            while self.bytes_available():
+                self.iterate()
         # TODO Test whether we got a firmware name and version, otherwise there
         # probably isn't any Firmata installed
 
