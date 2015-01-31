@@ -60,17 +60,28 @@ class NoInputWarning(RuntimeWarning):
     pass
 
 import socket
-import array
 
 class WifiSerial(object):
+    '''
+    Simple wrapper for using the ESP8266 module as transparent Serial port
+    '''
     def __init__(self, address=None, port=None):
         self.sock = socket.socket()
         self.sock.connect((address, int(port)))
-        self.sock.settimeout(1)
+        self.sock.settimeout(0.05)
         self.port = address + ":" + port
 
+    # Ugly hack, can't easily get the input buffer length
+    # This only works for reading analog and digital pins
+    # TODO: come with a cleaner way (recvfrom_into?)
+    def inWaiting(self):
+        return 3
+
     def read(self):
-        return self.sock.recv(1)
+        try:
+            return self.sock.recv(1)
+        except socket.timeout:
+            return 0
 
     def write(self, data):
         self.sock.send(data)
@@ -98,7 +109,7 @@ class Board(object):
         # Alas, Firmata blinks its version before printing it to serial
         # For 2.3, even 5 seconds might not be enough.
         # TODO Find a more reliable way to wait until the board is ready
-        self.pass_time(BOARD_SETUP_WAIT_TIME)
+        #self.pass_time(BOARD_SETUP_WAIT_TIME)
         self.name = name
         if not self.name:
             self.name = port
@@ -515,7 +526,7 @@ class Pin(object):
                 value = int(round(value * 255))
                 msg = chr(ANALOG_MESSAGE + self.pin_number)
                 msg += chr(value % 128)
-                msg += chr(value >> 7)
+                msg += chr((value >> 7) and 0xFF)
                 self.board.sp.write(msg)
             elif self.mode is SERVO:
                 value = int(value)

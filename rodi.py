@@ -276,6 +276,16 @@ class Rodi(Plugin):
         #Close actual Rodis
         self.closeRodis()
 
+        try:
+            r = pyfirmata.Arduino("1234", address = "192.168.4.1", baudrate = 57600)
+            it = pyfirmata.util.Iterator(r)
+            it.start()
+            self._rodis.append(r)
+            self._rodis_it.append(it)
+        except:
+            raise logoerror(_('Error loading board'))
+
+        '''
         #Search for new Rodis
         # add rfcomm to the list of rodis
         status,output_rfc = commands.getstatusoutput("ls /dev/ | grep rfcomm")
@@ -301,6 +311,7 @@ class Rodi(Plugin):
                     self._rodis_it.append(it)
                 except:
                     raise logoerror(_('Error loading %s board') % n)
+        '''
 
         self.change_color_blocks()
 
