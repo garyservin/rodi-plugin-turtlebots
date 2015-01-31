@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath('../'))
 import pyfirmata
 import time
 
-sensor = 4
+sensor = 0
 r = pyfirmata.Arduino("1234", address="192.168.4.1")
 it = pyfirmata.util.Iterator(r)
 it.start()
