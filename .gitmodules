@@ -1,0 +1,3 @@
+[submodule "rodi_py"]
+	path = rodi_py
+	url = https://github.com/rodibot/rodi-py.git

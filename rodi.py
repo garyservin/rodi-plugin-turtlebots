@@ -31,21 +31,12 @@ from TurtleArt.taprimitive import Primitive, ArgSlot
 from TurtleArt.tatype import TYPE_INT, TYPE_FLOAT, TYPE_STRING, TYPE_NUMBER
 
 sys.path.insert(0, os.path.abspath('./plugins/rodi'))
-import pyfirmata
+from rodi_py import rodi
 
 
 VALUE = {_('HIGH'): 1, _('LOW'): 0}
-MODE = {_('INPUT'): pyfirmata.INPUT, _('OUTPUT'): pyfirmata.OUTPUT,
-        _('PWM'): pyfirmata.PWM, _('SERVO'): pyfirmata.SERVO}
 
-MAX_SPEED = 90
-LEFT_SENSOR = 3
-RIGHT_SENSOR = 0
-BATTERY_MON = 1
-DISTANCE_SENSOR = 2
-LEFT_SERVO = 5
-RIGHT_SERVO = 6
-BUZZER = 9
+MAX_SPEED = 100
 
 COLOR_NOTPRESENT = ["#A0A0A0","#808080"]
 COLOR_PRESENT = ["#6A8DF6","#5A7DE6"]
@@ -59,23 +50,20 @@ class Rodi(Plugin):
     def __init__(self, parent):
         Plugin.__init__(self);
         self.tw = parent
-        self._baud = 57600
         self.active_rodi = 0
         self._rodis = []
-        self._rodis_it = []
-        self._rodis_pines = []
-        self.actualSpeed = [50, 50]
+        self.actualSpeed = [100, 100]
 
     def setup(self):
         """ Setup is called once, when the Turtle Window is created. """
         palette = make_palette('rodi', COLOR_NOTPRESENT,
-                             _('Palette for Rodi bots using Arduino'))
+                             _('Palette for RoDI bots using Arduino'))
 
         palette.add_block('refresh_Rodi',
                      style='basic-style',
-                     label=_('refresh Rodi'),
+                     label=_('refresh RoDI'),
                      prim_name='refresh_Rodi',
-                     help_string=_('refresh the state of the Rodi palette and blocks'))
+                     help_string=_('refresh the state of the RoDI palette and blocks'))
         self.tw.lc.def_prim('refresh_Rodi', 0,
             Primitive(self.refresh_Rodi))
         special_block_colors['refresh_Rodi'] = COLOR_PRESENT[:]
@@ -83,110 +71,149 @@ class Rodi(Plugin):
         palette.add_block('select_Rodi',
                           style='basic-style-1arg',
                           default = 1,
-                          label=_('Rodi'),
-                          help_string=_('set current Rodi robot'),
+                          label=_('RoDI'),
+                          help_string=_('set current RoDI robot'),
                           prim_name = 'select_Rodi')
         self.tw.lc.def_prim('select_Rodi', 1,
             Primitive(self.select_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER)]))
 
         palette.add_block('count_Rodi',
                           style='box-style',
-                          label=_('number of Rodis'),
-                          help_string=_('number of Rodi robots'),
+                          label=_('number of RoDIs'),
+                          help_string=_('number of RoDI robots'),
                           prim_name = 'count_Rodi')
         self.tw.lc.def_prim('count_Rodi', 0,
             Primitive(self.count_Rodi, TYPE_INT))
 
         palette.add_block('name_Rodi',
                   style='number-style-1arg',
-                  label=_('Rodi name'),
+                  label=_('RoDI name'),
                   default=[1],
-                  help_string=_('Get the name of a Rodi robot'),
+                  help_string=_('Get the name of a RoDI robot'),
                   prim_name='name_Rodi')
         self.tw.lc.def_prim('name_Rodi', 1,
             Primitive(self.name_Rodi, TYPE_STRING, [ArgSlot(TYPE_NUMBER)]))
 
         palette.add_block('move_Rodi',
                      style='basic-style-2arg',
-                     label=[_('move Rodi'), _('left'), _('right')],
+                     label=[_('move RoDI'), _('left'), _('right')],
                      prim_name='move_Rodi',
-                     default=[50, 50],
-                     help_string=_('moves the Rodi motors at the specified speed'))
+                     default=[100, 100],
+                     help_string=_('moves the RoDI motors at the specified speed'))
         self.tw.lc.def_prim('move_Rodi', 2,
             Primitive(self.move_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER), ArgSlot(TYPE_NUMBER)]))
         special_block_colors['move_Rodi'] = COLOR_NOTPRESENT[:]
 
         palette.add_block('stop_Rodi',
                      style='basic-style',
-                     label=_('stop Rodi'),
+                     label=_('stop RoDI'),
                      prim_name='stop_Rodi',
-                     help_string=_('stop the Rodi robot'))
+                     help_string=_('stop the RoDI robot'))
         self.tw.lc.def_prim('stop_Rodi', 0,
             Primitive(self.stop_Rodi))
         special_block_colors['stop_Rodi'] = COLOR_NOTPRESENT[:]
 
         palette.add_block('forward_Rodi',
                      style='basic-style',
-                     label=_('forward Rodi'),
+                     label=_('forward RoDI'),
                      prim_name='forward_Rodi',
-                     help_string=_('move the Rodi robot forward'))
+                     help_string=_('move the RoDI robot forward'))
         self.tw.lc.def_prim('forward_Rodi', 0,
             Primitive(self.forward_Rodi))
         special_block_colors['forward_Rodi'] = COLOR_NOTPRESENT[:]
 
         palette.add_block('left_Rodi',
                      style='basic-style',
-                     label=_('left Rodi'),
+                     label=_('left RoDI'),
                      prim_name='left_Rodi',
-                     help_string=_('turn the Rodi robot at left'))
+                     help_string=_('turn the RoDI robot at left'))
         self.tw.lc.def_prim('left_Rodi', 0,
             Primitive(self.left_Rodi))
         special_block_colors['left_Rodi'] = COLOR_NOTPRESENT[:]
 
         palette.add_block('right_Rodi',
                      style='basic-style',
-                     label=_('right Rodi'),
+                     label=_('right RoDI'),
                      prim_name='right_Rodi',
-                     help_string=_('turn the Rodi robot at right'))
+                     help_string=_('turn the RoDI robot at right'))
         self.tw.lc.def_prim('right_Rodi', 0,
             Primitive(self.right_Rodi))
         special_block_colors['right_Rodi'] = COLOR_NOTPRESENT[:]
 
         palette.add_block('backward_Rodi',
                      style='basic-style',
-                     label=_('backward Rodi'),
+                     label=_('backward RoDI'),
                      prim_name='backward_Rodi',
-                     help_string=_('move the Rodi robot backward'))
+                     help_string=_('move the RoDI robot backward'))
         self.tw.lc.def_prim('backward_Rodi', 0,
             Primitive(self.backward_Rodi))
         special_block_colors['backward_Rodi'] = COLOR_NOTPRESENT[:]
 
-        palette.add_block('distanced_Rodi',
+        palette.add_block('see_Rodi',
                      style='box-style',
-                     label=_('distance Rodi'),
-                     prim_name='distance_Rodi',
-                     help_string=_('returns the distance as a value between 0 and 1'))
-        self.tw.lc.def_prim('distance_Rodi', 0,
-            Primitive(self.distance_Rodi, TYPE_FLOAT))
-        special_block_colors['distance_Rodi'] = COLOR_NOTPRESENT[:]
+                     label=_('RoDI see'),
+                     prim_name='see_Rodi',
+                     help_string=_('returns the distance as a value between 0 and 100 cm'))
+        self.tw.lc.def_prim('see_Rodi', 0,
+            Primitive(self.see_Rodi, TYPE_NUMBER))
+        special_block_colors['see_Rodi'] = COLOR_NOTPRESENT[:]
 
-        palette.add_block('left_sensor_Rodi',
+        palette.add_block('sense_left_Rodi',
                      style='box-style',
-                     label=_('left sensor Rodi'),
-                     prim_name='left_sensor_Rodi',
-                     help_string=_('returns the left line sensor as a value between 0 and 1'))
-        self.tw.lc.def_prim('left_sensor_Rodi', 0,
-            Primitive(self.left_sensor_Rodi, TYPE_FLOAT))
-        special_block_colors['left_sensor_Rodi'] = COLOR_NOTPRESENT[:]
+                     label=_('RoDI sense left'),
+                     prim_name='sense_left_Rodi',
+                     help_string=_('returns the left line sensor as a value between 0 and 1023'))
+        self.tw.lc.def_prim('sense_left_Rodi', 0,
+            Primitive(self.sense_left_Rodi, TYPE_NUMBER))
+        special_block_colors['sense_left_Rodi'] = COLOR_NOTPRESENT[:]
 
-        palette.add_block('right_sensor_Rodi',
+        palette.add_block('sense_right_Rodi',
                      style='box-style',
-                     label=_('right sensor Rodi'),
+                     label=_('RoDI sense right'),
                      prim_name='right_sensor_Rodi',
-                     help_string=_('returns the right line sensor as a value between 0 and 1'))
+                     help_string=_('returns the right line sensor as a value between 0 and 1023'))
         self.tw.lc.def_prim('right_sensor_Rodi', 0,
-            Primitive(self.right_sensor_Rodi, TYPE_FLOAT))
+            Primitive(self.sense_right_Rodi, TYPE_NUMBER))
         special_block_colors['right_sensor_Rodi'] = COLOR_NOTPRESENT[:]
+
+        palette.add_block('sense_light_Rodi',
+                     style='box-style',
+                     label=_('RoDI sense light'),
+                     prim_name='sense_light_Rodi',
+                     help_string=_('returns the ambient light as a value between 0 and 1023'))
+        self.tw.lc.def_prim('sense_light_Rodi', 0,
+            Primitive(self.sense_light_Rodi, TYPE_NUMBER))
+        special_block_colors['sense_light_Rodi'] = COLOR_NOTPRESENT[:]
+
+        palette.add_block('play_Rodi',
+                     style='basic-style-2arg',
+                     label=[_('RoDI play'), _('note'), _('duration')],
+                     prim_name='play_Rodi',
+                     default=[31, 250],
+                     help_string=_('make RoDI play a not for a specified duration'))
+        self.tw.lc.def_prim('play_Rodi', 2,
+            Primitive(self.play_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER), ArgSlot(TYPE_NUMBER)]))
+        special_block_colors['play_Rodi'] = COLOR_NOTPRESENT[:]
+
+        palette.add_block('pixel_Rodi',
+                     style='basic-style-3arg',
+                     label=[_('RoDI pixel'), _('red'), _('green'), _('blue')],
+                     prim_name='pixel_Rodi',
+                     default=[0, 0, 0],
+                     help_string=_('set the color of the pixel'))
+        self.tw.lc.def_prim('pixel_Rodi', 3,
+            Primitive(self.pixel_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER), ArgSlot(TYPE_NUMBER), ArgSlot(TYPE_NUMBER)]))
+        special_block_colors['pixel_Rodi'] = COLOR_NOTPRESENT[:]
+
+        palette.add_block('led_Rodi',
+                     style='basic-style-1arg',
+                     label=[_('RoDI led'), _('state')],
+                     prim_name='led_Rodi',
+                     default=[1],
+                     help_string=_('set the state of the led (on = 1 | off = 0'))
+        self.tw.lc.def_prim('led_Rodi', 1,
+            Primitive(self.led_Rodi, arg_descs=[ArgSlot(TYPE_NUMBER)]))
+        special_block_colors['led_Rodi'] = COLOR_NOTPRESENT[:]
 
     ############################## Turtle signals ##############################
 
@@ -194,7 +221,7 @@ class Rodi(Plugin):
         self.stopRodis()
 
     def quit(self):
-        self.closeRodis()
+        pass
 
     ############################ Select functions ##############################
 
@@ -252,55 +279,26 @@ class Rodi(Plugin):
             self.tw.regenerate_palette(index)
 
     def refresh_Rodi(self):
-        #Close actual Rodis
-        self.closeRodis()
+        try:
+            r = rodi.RoDI()
+            self._rodis.append(r)
+            if r.see() is not None:
+                self.change_color_blocks()
+            else:
+                del self._rodis[-1]
+        except:
+            raise logoerror(_('Error connecting to RoDI'))
 
-        #Search for new Rodis
-        #status,output_usb = commands.getstatusoutput("ls /dev/ | grep ttyUSB")
-        #output_usb_parsed = output_usb.split('\n')
-        #status,output_acm = commands.getstatusoutput("ls /dev/ | grep ttyACM")
-        #output_acm_parsed = output_acm.split('\n')
 
-        # add rfcomm to the list of rodis
-        status,output_rfc = commands.getstatusoutput("ls /dev/ | grep rfcomm")
-        output_rfc_parsed = output_rfc.split('\n')
+    def closeRodis(self):
+        pass
 
-        #output = output_usb_parsed
-        #output.extend(output_acm_parsed)
-        output = output_rfc_parsed
-
-        for dev in output:
-            if not(dev == ''):
-                n = '/dev/%s' % dev
-                try:
-                    r = pyfirmata.Arduino(n, baudrate=self._baud)
-                    it = pyfirmata.util.Iterator(r)
-                    it.start()
-                    self._rodis.append(r)
-                    self._rodis_it.append(it)
-                except:
-                    raise logoerror(_('Error loading %s board') % n)
-
-        self.change_color_blocks()
-
-    ############################ Movement calls ################################
+    ############################ Action calls ################################
 
     def set_vels(self, left, right):
         try:
             r = self._rodis[self.active_rodi]
-            #lMode = r.digital[LEFT_SERVO]._get_mode()
-            #rMode = r.digital[RIGHT_SERVO]._get_mode()
-            if left == 0:
-                r.digital[LEFT_SERVO]._set_mode(MODE['OUTPUT'])
-            else:
-                r.digital[LEFT_SERVO]._set_mode(MODE['SERVO'])
-                r.digital[LEFT_SERVO].write(MAX_SPEED + left)
-
-            if right == 0:
-                r.digital[RIGHT_SERVO]._set_mode(MODE['OUTPUT'])
-            else:
-                r.digital[RIGHT_SERVO]._set_mode(MODE['SERVO'])
-                r.digital[RIGHT_SERVO].write(MAX_SPEED - right)
+            r.move(left, right)
         except:
             raise logoerror(ERROR)
 
@@ -334,58 +332,76 @@ class Rodi(Plugin):
     def stop_Rodi(self):
         self.set_vels(0, 0)
 
+    def stopRodis(self):
+        for rodi in self._rodis:
+            try:
+                rodi.stop()
+            except:
+                pass
+
+    def blink_Rodi(self, period):
+        try:
+            r = self._rodis[self.active_rodi]
+            r.blink(period)
+        except:
+            raise logoerror(ERROR)
+
+    def play_Rodi(self, note, duration):
+        try:
+            r = self._rodis[self.active_rodi]
+            r.sing(note, duration)
+        except:
+            raise logoerror(ERROR)
+
+    def pixel_Rodi(self, red, green, blue):
+        try:
+            r = self._rodis[self.active_rodi]
+            r.pixel(red, green, blue)
+        except:
+            raise logoerror(ERROR)
+
+    def led_Rodi(self, state):
+        try:
+            r = self._rodis[self.active_rodi]
+            r.led(state)
+        except:
+            raise logoerror(ERROR)
+
     ################################ Sensors calls ################################
 
-    def distance_Rodi(self):
+    def see_Rodi(self):
         res = -1
         try:
             r = self._rodis[self.active_rodi]
-            r.analog[DISTANCE_SENSOR].enable_reporting()
-            r.pass_time(0.05)
-            res = r.analog[DISTANCE_SENSOR].read()
-            r.analog[DISTANCE_SENSOR].disable_reporting()
+            res = r.see()
         except:
             pass
         return res
 
-    def left_sensor_Rodi(self):
+    def sense_left_Rodi(self):
         res = -1
         try:
             r = self._rodis[self.active_rodi]
-            r.analog[LEFT_SENSOR].enable_reporting()
-            r.pass_time(0.05)
-            res = r.analog[LEFT_SENSOR].read()
-            r.analog[LEFT_SENSOR].disable_reporting()
+            res = r.sense()[0]
         except:
             pass
         return res
 
-    def right_sensor_Rodi(self):
+    def sense_right_Rodi(self):
         res = -1
         try:
             r = self._rodis[self.active_rodi]
-            r.analog[RIGHT_SENSOR].enable_reporting()
-            r.pass_time(0.05)
-            res = r.analog[RIGHT_SENSOR].read()
-            r.analog[RIGHT_SENSOR].disable_reporting()
+            res = r.sense()[1]
         except:
             pass
         return res
 
-    def closeRodis(self):
-        for dev in self._rodis:
-            try:
-                dev.exit()
-            except:
-                pass
-        self._rodis = []
-        self._rodis_it = []
-
-    def stopRodis(self):
-        for dev in self._rodis:
-            try:
-                dev.digital[LEFT_SERVO]._set_mode(MODE['OUTPUT'])
-                dev.digital[RIGHT_SERVO]._set_mode(MODE['OUTPUT'])
-            except:
-                pass
+    def sense_light_Rodi(self):
+        res = -1
+        try:
+            r = self._rodis[self.active_rodi]
+            res = r.light()
+        except:
+            pass
+        return res
 
